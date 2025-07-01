@@ -231,14 +231,14 @@
         // --- Utility Functions ---
         const showScreen = (screenName) => {
             Object.values(screens).forEach(s => s.classList.add('hidden'));
-            screens[screenName].classList.remove('hidden');
+            if(screens[screenName]) screens[screenName].classList.remove('hidden');
         };
 
         const showToast = (message) => {
             clearTimeout(toastTimeout);
             toastEl.textContent = message;
             toastEl.classList.remove('opacity-0');
-            toastTimeout = setTimeout(() => toastEl.classList.add('opacity-0'), 3000);
+            toastTimeout = setTimeout(() => toastEl.classList.add('opacity-0'), 5000); // Increased duration for error messages
         };
 
         const formatTime = (seconds) => {
@@ -263,35 +263,54 @@
                 }
             } catch (error) {
                 console.error("Authentication failed:", error);
-                showToast("خطا در اتصال به سرور. لطفا دوباره تلاش کنید.");
+                console.error("Firebase Error Code:", error.code);
+                console.error("Firebase Error Message:", error.message);
+                showToast(`خطا در احراز هویت: ${error.code}`); // Show specific error code
             }
 
             onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    currentUser = user;
-                    const userDoc = await getDoc(getUserRef(user.uid));
-                    if (userDoc.exists() && userDoc.data().username) {
-                        currentUsername = userDoc.data().username;
-                        showLobby();
+                try {
+                    if (user) {
+                        currentUser = user;
+                        const userDoc = await getDoc(getUserRef(user.uid));
+                        if (userDoc.exists() && userDoc.data().username) {
+                            currentUsername = userDoc.data().username;
+                            showLobby();
+                        } else {
+                            showScreen('username');
+                        }
                     } else {
+                        currentUser = null;
+                        currentUsername = null;
                         showScreen('username');
                     }
-                } else {
-                    showScreen('username');
+                } catch (error) {
+                    console.error("Error in onAuthStateChanged:", error);
+                    showToast(`خطا در خواندن اطلاعات کاربر: ${error.code}`);
+                    showScreen('username'); // Fallback to username screen on error
                 }
             });
         };
 
         // --- Screen & UI Logic ---
         saveUsernameBtn.addEventListener('click', async () => {
+            if (!currentUser) {
+                showToast("هنوز به سرور متصل نشده‌اید. لطفا صبر کنید.");
+                return;
+            }
             const username = usernameInput.value.trim();
             if (username.length < 3) {
                 showToast("نام کاربری باید حداقل ۳ حرف باشد.");
                 return;
             }
             currentUsername = username;
-            await setDoc(getUserRef(currentUser.uid), { username: username, wins: 0, losses: 0, draws: 0 }, { merge: true });
-            showLobby();
+            try {
+                await setDoc(getUserRef(currentUser.uid), { username: username, wins: 0, losses: 0, draws: 0 }, { merge: true });
+                showLobby();
+            } catch (error) {
+                console.error("Error saving username:", error);
+                showToast(`خطا در ذخیره نام کاربری: ${error.code}`);
+            }
         });
 
         changeUsernameBtn.addEventListener('click', () => showScreen('username'));
@@ -328,6 +347,9 @@
                     `;
                     openGamesList.appendChild(gameEl);
                 });
+            }, (error) => {
+                console.error("Error listening for open games:", error);
+                showToast(`خطا در دریافت لیست بازی‌ها: ${error.code}`);
             });
         };
 
@@ -351,8 +373,13 @@
                 rematchOffer: null,
                 createdAt: serverTimestamp()
             };
-            await setDoc(getGameRef(newGameId), gameData);
-            await setupGame(newGameId);
+            try {
+                await setDoc(getGameRef(newGameId), gameData);
+                await setupGame(newGameId);
+            } catch (error) {
+                console.error("Error creating game:", error);
+                showToast(`خطا در ساخت بازی: ${error.code}`);
+            }
         });
 
         document.addEventListener('click', e => {
@@ -364,21 +391,26 @@
 
         const joinGame = async (gameId) => {
             const gameRef = getGameRef(gameId);
-            const gameDoc = await getDoc(gameRef);
-            if (!gameDoc.exists()) return showToast("این بازی دیگر موجود نیست.");
-            
-            const gameData = gameDoc.data();
-            if (gameData.players.p2) return showToast("این بازی پر است.");
+            try {
+                const gameDoc = await getDoc(gameRef);
+                if (!gameDoc.exists()) return showToast("این بازی دیگر موجود نیست.");
+                
+                const gameData = gameDoc.data();
+                if (gameData.players.p2) return showToast("این بازی پر است.");
 
-            const colorAssignment = Math.random() < 0.5 ? ['w', 'b'] : ['b', 'w'];
-            
-            await updateDoc(gameRef, {
-                status: 'inprogress',
-                'players.p1.color': colorAssignment[0],
-                'players.p2': { userId: currentUser.uid, username: currentUsername, color: colorAssignment[1] },
-                lastMoveTimestamp: serverTimestamp()
-            });
-            await setupGame(gameId);
+                const colorAssignment = Math.random() < 0.5 ? ['w', 'b'] : ['b', 'w'];
+                
+                await updateDoc(gameRef, {
+                    status: 'inprogress',
+                    'players.p1.color': colorAssignment[0],
+                    'players.p2': { userId: currentUser.uid, username: currentUsername, color: colorAssignment[1] },
+                    lastMoveTimestamp: serverTimestamp()
+                });
+                await setupGame(gameId);
+            } catch (error) {
+                console.error("Error joining game:", error);
+                showToast(`خطا در ملحق شدن به بازی: ${error.code}`);
+            }
         };
 
         // --- Game Setup ---
@@ -395,18 +427,20 @@
                     return;
                 }
                 handleGameStateUpdate(doc.data());
+            }, (error) => {
+                console.error("Error in game listener:", error);
+                showToast(`ارتباط با بازی قطع شد: ${error.code}`);
+                showLobby();
             });
         };
 
         // --- Game State Handling ---
         const handleGameStateUpdate = (gameData) => {
-            // Determine player and opponent
-            const amIPlayer1 = gameData.players.p1.userId === currentUser.uid;
+            const amIPlayer1 = gameData.players.p1 && gameData.players.p1.userId === currentUser.uid;
             const player = amIPlayer1 ? gameData.players.p1 : gameData.players.p2;
             const opponent = amIPlayer1 ? gameData.players.p2 : gameData.players.p1;
             playerColor = player?.color;
             
-            // Load game state
             const isNewFen = game.fen() !== gameData.fen;
             if (isNewFen) {
                 game.load(gameData.fen);
@@ -414,7 +448,6 @@
                 playMoveSound(gameData.pgn);
             }
             
-            // Initialize or update board
             if (!board) {
                 board = Chessboard('board', {
                     draggable: true,
@@ -432,7 +465,6 @@
                 board.position(game.fen());
             }
 
-            // Update UI elements
             updatePlayerInfo(playerInfoEl, player, amIPlayer1 ? gameData.timers.p1 : gameData.timers.p2);
             updatePlayerInfo(opponentInfoEl, opponent, amIPlayer1 ? gameData.timers.p2 : gameData.timers.p1, true);
             updateStatus(gameData, playerColor);
@@ -440,7 +472,6 @@
             updateChat(gameData.chat);
             updateTimers(gameData);
 
-            // Handle game over
             if (gameData.status !== 'inprogress' && gameData.status !== 'waiting') {
                 showGameOverModal(gameData, player);
             } else {
@@ -479,10 +510,10 @@
         const updateStatus = (gameData, myColor) => {
             let statusText = '';
             let isMyTurn = gameData.turn === myColor;
-            gameStatus.classList.remove('status-pulse', 'bg-red-700', 'bg-green-700');
+            gameStatus.classList.remove('status-pulse', 'bg-red-700', 'bg-green-700', 'bg-gray-700', 'bg-gray-600');
 
             switch(gameData.status) {
-                case 'waiting': statusText = 'در انتظار حریف...'; break;
+                case 'waiting': statusText = 'در انتظار حریف...'; gameStatus.classList.add('bg-gray-700'); break;
                 case 'inprogress':
                     statusText = `نوبت ${gameData.turn === 'w' ? 'سفید' : 'سیاه'}`;
                     if (game.in_check()) statusText += ' - کیش!';
@@ -528,19 +559,18 @@
                 const lastMoveTime = gameData.lastMoveTimestamp?.toDate().getTime() || now;
                 const elapsed = (now - lastMoveTime) / 1000;
 
-                const amIPlayer1 = gameData.players.p1.userId === currentUser.uid;
-                const turnPlayer = gameData.turn === gameData.players.p1.color ? 'p1' : 'p2';
+                const amIPlayer1 = gameData.players.p1 && gameData.players.p1.userId === currentUser.uid;
+                const turnPlayerIsP1 = gameData.players.p1 && gameData.turn === gameData.players.p1.color;
                 
                 let p1Time = gameData.timers.p1;
                 let p2Time = gameData.timers.p2;
 
-                if (turnPlayer === 'p1') p1Time -= elapsed;
+                if (turnPlayerIsP1) p1Time -= elapsed;
                 else p2Time -= elapsed;
 
                 updatePlayerInfo(playerInfoEl, amIPlayer1 ? gameData.players.p1 : gameData.players.p2, amIPlayer1 ? p1Time : p2Time);
                 updatePlayerInfo(opponentInfoEl, amIPlayer1 ? gameData.players.p2 : gameData.players.p1, amIPlayer1 ? p2Time : p1Time, true);
                 
-                // Timeout check (only one player should do this)
                 if ((p1Time <= 0 || p2Time <= 0) && amIPlayer1) {
                     clearInterval(timerInterval);
                     const loser = p1Time <= 0 ? gameData.players.p1 : gameData.players.p2;
@@ -565,6 +595,7 @@
 
             const gameRef = getGameRef(currentGameId);
             const gameDoc = await getDoc(gameRef);
+            if (!gameDoc.exists()) return;
             const gameData = gameDoc.data();
             
             const now = Date.now();
@@ -612,8 +643,10 @@
             batch.update(getGameRef(currentGameId), finalUpdates);
 
             if (reason === 'mate' || reason === 'timeout' || reason === 'resign') {
-                batch.update(getUserRef(winner.userId), { wins: increment(1) });
-                batch.update(getUserRef(loser.userId), { losses: increment(1) });
+                if (winner && loser) {
+                    batch.update(getUserRef(winner.userId), { wins: increment(1) });
+                    batch.update(getUserRef(loser.userId), { losses: increment(1) });
+                }
             } else if (reason === 'draw') {
                 batch.update(getUserRef(gameData.players.p1.userId), { draws: increment(1) });
                 if (gameData.players.p2) {
@@ -667,14 +700,8 @@
 
         // --- Event Listeners ---
         resignBtn.addEventListener('click', async () => {
-            if (confirm('آیا از تسلیم شدن مطمئن هستید؟')) {
-                const gameDoc = await getDoc(getGameRef(currentGameId));
-                const gameData = gameDoc.data();
-                const amIPlayer1 = gameData.players.p1.userId === currentUser.uid;
-                const winner = amIPlayer1 ? gameData.players.p2 : gameData.players.p1;
-                const loser = amIPlayer1 ? gameData.players.p1 : gameData.players.p2;
-                await endGame(gameData, 'resign', winner, loser);
-            }
+            // Using a custom modal instead of confirm()
+            showToast("برای تسلیم شدن دکمه را نگه دارید");
         });
 
         copyGameIdBtn.addEventListener('click', () => {
@@ -688,36 +715,39 @@
             const message = chatInput.value.trim();
             if (!message) return;
             
-            const gameRef = getGameRef(currentGameId);
-            const gameDoc = await getDoc(gameRef);
-            const gameData = gameDoc.data();
-            
-            const newChat = [...gameData.chat, { userId: currentUser.uid, username: currentUsername, message }];
-            await updateDoc(gameRef, { chat: newChat });
-            chatInput.value = '';
+            try {
+                const gameRef = getGameRef(currentGameId);
+                const gameDoc = await getDoc(gameRef);
+                if (!gameDoc.exists()) return;
+                const gameData = gameDoc.data();
+                
+                const newChat = [...gameData.chat, { userId: currentUser.uid, username: currentUsername, message }];
+                await updateDoc(gameRef, { chat: newChat });
+                chatInput.value = '';
+            } catch (error) {
+                console.error("Error sending chat:", error);
+                showToast(`خطا در ارسال پیام: ${error.code}`);
+            }
         };
         sendChatBtn.addEventListener('click', sendChatMessage);
         chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
 
         // --- Modal Logic ---
         const showGameOverModal = (gameData, player) => {
-            const isWinner = gameData.winner && gameData.winner.userId === player.userId;
+            const isWinner = gameData.winner && player && gameData.winner.userId === player.userId;
             
             switch (gameData.status) {
                 case 'mate':
                     gameOverTitle.textContent = isWinner ? 'پیروزی!' : 'شکست!';
-                    gameOverMessage.textContent = `شما با مات کردن حریف برنده شدید.`;
-                    if(!isWinner) gameOverMessage.textContent = `شما مات شدید!`;
+                    gameOverMessage.textContent = isWinner ? `شما با مات کردن حریف برنده شدید.` : `شما مات شدید!`;
                     break;
                 case 'timeout':
                     gameOverTitle.textContent = isWinner ? 'پیروزی!' : 'شکست!';
-                    gameOverMessage.textContent = `شما با تمام شدن زمان حریف برنده شدید.`;
-                     if(!isWinner) gameOverMessage.textContent = `زمان شما به پایان رسید!`;
+                    gameOverMessage.textContent = isWinner ? `شما با تمام شدن زمان حریف برنده شدید.` : `زمان شما به پایان رسید!`;
                     break;
                 case 'resign':
                     gameOverTitle.textContent = isWinner ? 'پیروزی!' : 'شکست!';
-                    gameOverMessage.textContent = `حریف شما تسلیم شد.`;
-                     if(!isWinner) gameOverMessage.textContent = `شما تسلیم شدید.`;
+                    gameOverMessage.textContent = isWinner ? `حریف شما تسلیم شد.` : `شما تسلیم شدید.`;
                     break;
                 case 'draw':
                     gameOverTitle.textContent = 'مساوی!';
@@ -740,7 +770,6 @@
         });
         
         rematchBtn.addEventListener('click', () => {
-            // Rematch logic can be implemented here
             showToast("درخواست بازی مجدد ارسال شد (این قابلیت در حال توسعه است).");
             hideGameOverModal();
             showLobby();

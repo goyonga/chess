@@ -3,249 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شطرنج آنلاین</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" xintegrity="sha384-q94+BZSKLrkL1/ohfjR8c6L+A6qzNH9R2hBLwyoAfu3iE/GvKQdGdEA6/ZawWo6V" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js" xintegrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js" xintegrity="sha384-8Vi8VHwn3vjQ9eUHUxex3JSN/NFqUg3QbPyX8kWyb93+8AC/pPWTzj+nHtbC5bxD" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&display=swap');
-        
-        :root {
-            --board-bg: #312E2B;
-            --light-square: #F0D9B5;
-            --dark-square: #B58863;
-            --highlight-last: rgba(246, 246, 105, 0.5); /* Yellowish highlight */
-            --highlight-possible: rgba(30, 150, 40, 0.4); /* Greenish highlight */
-        }
+    <title>شطرنج آنلاین مدرن</title>
 
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chess Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <!-- Icons and Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --board-bg: #262421;
+            --light-square: #f0d9b5;
+            --dark-square: #b58863;
+            --highlight-last: rgba(204, 212, 53, 0.5);
+            --highlight-possible: rgba(30, 150, 40, 0.3);
+            --highlight-check: rgba(255, 0, 0, 0.4);
+        }
         body {
             font-family: 'Vazirmatn', sans-serif;
-            background-color: #1a202c;
+            background-color: #1a1a1a;
             color: #e2e8f0;
         }
-
-        /* --- New Chessboard Styles --- */
-        .board-frame {
-            background-color: var(--board-bg);
-            padding: 1.5rem; /* Creates the frame */
-            border-radius: 12px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3), 0 6px 6px rgba(0,0,0,0.25);
+        .chessboard-container {
+            width: 95vw;
+            max-width: 80vh;
         }
-
-        #board {
-            width: 100%;
-            height: 100%;
+        .white-1e1d7 { background-color: var(--light-square) !important; color: var(--dark-square) !important; }
+        .black-3c85d { background-color: var(--dark-square) !important; color: var(--light-square) !important; }
+        .highlight-last .square-55d63 { box-shadow: inset 0 0 0 4px var(--highlight-last); }
+        .highlight-check .square-55d63 { background-color: var(--highlight-check) !important; }
+        .highlight-possible .square-55d63::after {
+            content: ''; display: block; width: 30%; height: 30%; border-radius: 50%;
+            background: var(--highlight-possible); position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); pointer-events: none;
         }
-
-        /* Override chessboard.js inline styles for square colors */
-        .white-1e1d7 {
-            background-color: var(--light-square) !important;
-            color: var(--dark-square) !important;
-        }
-        .black-3c85d {
-            background-color: var(--dark-square) !important;
-            color: var(--light-square) !important;
-        }
-        
-        /* Highlight for the last move */
-        .highlight-last-move .square-55d63 {
-            box-shadow: inset 0 0 0 5px var(--highlight-last);
-        }
-        
-        /* Highlight for possible moves */
-        .highlight-possible-move .square-55d63::after {
-            content: '';
-            display: block;
-            width: 35%;
-            height: 35%;
-            border-radius: 50%;
-            background: var(--highlight-possible);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none; /* Allows clicking through the highlight */
-        }
-
-        .board-container {
-            width: 90vw;
-            height: 90vw;
-            max-width: 60vh;
-            max-height: 60vh;
-        }
-
-        .modal {
-            transition: opacity 0.25s ease;
-        }
-        .modal-content {
-            transition: transform 0.25s ease;
-        }
+        .modal { transition: opacity 0.25s ease; }
+        .modal-content { transition: transform 0.25s ease; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .status-pulse { animation: pulse-bg 2s infinite; }
+        @keyframes pulse-bg { 0%, 100% { background-color: #3b82f6; } 50% { background-color: #1d4ed8; } }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen">
 
     <div id="app-container" class="w-full max-w-7xl mx-auto p-4">
 
-        <div id="username-screen" class="text-center">
+        <!-- Username Screen -->
+        <div id="username-screen" class="text-center fade-in">
             <h1 class="text-5xl font-bold mb-4 text-white">شطرنج آنلاین</h1>
-            <p class="text-gray-400 mb-8">برای شروع، یک نام کاربری برای خود انتخاب کنید.</p>
+            <p class="text-gray-400 mb-8">برای ورود به لابی، یک نام کاربری انتخاب کنید.</p>
             <div class="bg-gray-800 p-8 rounded-xl shadow-2xl max-w-sm mx-auto">
-                <label for="username-input" class="block mb-2 text-lg font-medium text-gray-300">نام کاربری</label>
-                <input type="text" id="username-input" class="text-center bg-gray-700 border border-gray-600 text-white text-lg rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="مثلا: علی">
+                <input type="text" id="username-input" class="text-center bg-gray-700 border border-gray-600 text-white text-lg rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3" placeholder="نام کاربری شما">
                 <button id="save-username-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
-                    <i class="fas fa-play-circle mr-2"></i> شروع بازی
+                    <i class="fas fa-chess-knight mr-2"></i> ورود به لابی
                 </button>
             </div>
         </div>
 
-        <div id="lobby-screen" class="hidden text-center">
-            <h1 class="text-5xl font-bold mb-4 text-white">خوش آمدی, <span id="username-display" class="text-indigo-400"></span>!</h1>
-            <p class="text-gray-400 mb-8">یک بازی جدید بسازید یا به بازی دوستتان ملحق شوید</p>
-            
-            <div class="bg-gray-800 p-8 rounded-xl shadow-2xl max-w-md mx-auto">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold mb-4">ساخت بازی جدید</h2>
-                    <label for="time-control" class="block mb-2 text-sm font-medium text-gray-300">انتخاب زمان بازی (دقیقه):</label>
-                    <select id="time-control" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                        <option value="1">۱ دقیقه</option>
-                        <option value="3">۳ دقیقه</option>
-                        <option value="5" selected>۵ دقیقه</option>
-                        <option value="10">۱۰ دقیقه</option>
-                        <option value="15">۱۵ دقیقه</option>
-                    </select>
-                    <button id="create-game-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        <i class="fas fa-plus-circle mr-2"></i> بساز
-                    </button>
-                </div>
-
-                <div class="border-t border-gray-700 my-6"></div>
-
-                <div>
-                    <h2 class="text-2xl font-bold mb-4">ملحق شدن به بازی</h2>
-                    <label for="game-id-input" class="block mb-2 text-sm font-medium text-gray-300">شناسه بازی:</label>
-                    <input type="text" id="game-id-input" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="شناسه بازی را وارد کنید">
-                    <button id="join-game-btn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        <i class="fas fa-sign-in-alt mr-2"></i> ملحق شو
-                    </button>
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="hidden fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-4xl font-bold text-white">لابی بازی</h1>
+                <div class="text-right">
+                    <div class="text-lg">خوش آمدی, <span id="username-display" class="font-bold text-indigo-400"></span>!</div>
+                    <button id="change-username-btn" class="text-sm text-gray-500 hover:text-indigo-400">تغییر نام</button>
                 </div>
             </div>
-             <button id="change-username-btn" class="mt-6 text-sm text-gray-500 hover:text-indigo-400">تغییر نام کاربری</button>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Create Game -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
+                    <h2 class="text-2xl font-bold mb-4 border-b border-gray-700 pb-2">بازی جدید بساز</h2>
+                    <label for="time-control" class="block mb-2 text-sm font-medium text-gray-300">زمان بازی (دقیقه):</label>
+                    <select id="time-control" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5">
+                        <option value="1">۱ دقیقه (بلیتز)</option>
+                        <option value="3">۳ دقیقه (بلیتز)</option>
+                        <option value="5" selected>۵ دقیقه (بلیتز)</option>
+                        <option value="10">۱۰ دقیقه (رپید)</option>
+                        <option value="15">۱۵ دقیقه (رپید)</option>
+                    </select>
+                    <button id="create-game-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                        <i class="fas fa-plus-circle mr-2"></i> ساخت بازی
+                    </button>
+                </div>
+                <!-- Open Games -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl md:col-span-2">
+                    <h2 class="text-2xl font-bold mb-4 border-b border-gray-700 pb-2">به یک بازی ملحق شو</h2>
+                    <div id="open-games-list" class="space-y-3 max-h-64 overflow-y-auto pr-2">
+                        <!-- Games will be populated here -->
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="game-screen" class="hidden w-full">
-            <div class="flex flex-col lg:flex-row gap-6 justify-center items-center">
-                
-                <!-- Opponent Info -->
-                <div id="opponent-info" class="w-full lg:w-1/5 p-4 bg-gray-800 rounded-xl shadow-lg order-1 flex-shrink-0">
-                    <div class="flex items-center gap-4">
-                        <i class="fas fa-user-circle text-4xl text-gray-400"></i>
-                        <div>
-                            <h3 id="opponent-name" class="font-bold text-lg truncate">در انتظار حریف...</h3>
-                            <div id="opponent-timer" class="font-mono text-3xl font-bold text-white">05:00</div>
-                        </div>
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden fade-in">
+            <div class="flex flex-col lg:flex-row gap-4 justify-center">
+                <!-- Player Info & Board -->
+                <div class="flex-grow flex flex-col items-center">
+                    <!-- Opponent Info -->
+                    <div id="opponent-info" class="w-full max-w-xl p-3 bg-gray-800 rounded-lg shadow-lg flex justify-between items-center mb-2"></div>
+                    <!-- Board -->
+                    <div class="chessboard-container shadow-2xl rounded-lg overflow-hidden">
+                        <div id="board" class="w-full"></div>
                     </div>
-                     <div class="mt-2 text-sm text-gray-400">امتیاز: <span id="opponent-wins">۰</span></div>
+                    <!-- Player Info -->
+                    <div id="player-info" class="w-full max-w-xl p-3 bg-gray-800 rounded-lg shadow-lg flex justify-between items-center mt-2"></div>
                 </div>
 
-                <!-- Chessboard Area -->
-                <div class="w-full lg:max-w-xl flex flex-col items-center order-2 lg:order-2">
-                    <div id="game-status" class="w-full text-center mb-3 p-3 bg-gray-800 rounded-lg font-bold text-lg">در انتظار حریف...</div>
-                    <div class="board-frame">
-                         <div id="board" class="board-container"></div>
+                <!-- Side Panel -->
+                <div class="w-full lg:w-80 bg-gray-800 rounded-xl shadow-2xl p-4 flex flex-col flex-shrink-0">
+                    <div id="game-status" class="w-full text-center mb-3 p-3 bg-gray-700 rounded-lg font-bold text-lg"></div>
+                    <!-- Moves History -->
+                    <div class="flex-grow bg-gray-900 rounded-lg p-2 mb-3 overflow-y-auto">
+                        <h3 class="text-lg font-semibold mb-2 text-center">تاریخچه حرکات</h3>
+                        <div id="pgn-display" class="text-sm space-y-1 text-center font-mono"></div>
+                    </div>
+                    <!-- Chat -->
+                    <div class="flex-grow bg-gray-900 rounded-lg p-2 mb-3 flex flex-col">
+                         <h3 class="text-lg font-semibold mb-2 text-center">چت</h3>
+                         <div id="chat-box" class="flex-grow space-y-2 overflow-y-auto mb-2 pr-2"></div>
+                         <div class="flex gap-2">
+                             <input type="text" id="chat-input" class="flex-grow bg-gray-700 border border-gray-600 rounded-md p-2 text-sm" placeholder="پیام خود را بنویسید...">
+                             <button id="send-chat-btn" class="bg-indigo-600 hover:bg-indigo-700 rounded-md px-4"><i class="fas fa-paper-plane"></i></button>
+                         </div>
+                    </div>
+                    <!-- Controls -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="resign-btn" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition"><i class="fas fa-flag mr-2"></i>تسلیم</button>
+                        <button id="copy-game-id-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition"><i class="fas fa-copy mr-2"></i>کپی لینک</button>
                     </div>
                 </div>
-
-                <!-- Player Info -->
-                <div id="player-info" class="w-full lg:w-1/5 p-4 bg-gray-800 rounded-xl shadow-lg order-3 flex-shrink-0">
-                    <div class="flex items-center gap-4">
-                        <i class="fas fa-user-circle text-4xl text-green-400"></i>
-                        <div>
-                            <h3 id="player-name" class="font-bold text-lg truncate">شما</h3>
-                            <div id="player-timer" class="font-mono text-3xl font-bold text-white">05:00</div>
-                        </div>
-                    </div>
-                     <div class="mt-2 text-sm text-gray-400">امتیاز: <span id="player-wins">۰</span></div>
-                </div>
-
             </div>
-             <div class="w-full text-center mt-4">
-                <p class="text-gray-500">شناسه بازی (برای اشتراک گذاری): <span id="game-id-display" class="font-mono bg-gray-700 px-2 py-1 rounded"></span>
-                <button id="copy-game-id-btn" class="ml-2 text-gray-400 hover:text-white"><i class="fas fa-copy"></i></button>
-                </p>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform scale-95">
+            <h2 id="game-over-title" class="text-4xl font-bold mb-4"></h2>
+            <p id="game-over-message" class="text-lg mb-6"></p>
+            <div class="flex gap-4">
+                <button id="rematch-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition">بازی مجدد</button>
+                <button id="back-to-lobby-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition">بازگشت به لابی</button>
             </div>
         </div>
     </div>
     
-    <div id="game-over-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
-        <div class="modal-content bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform scale-95">
-            <h2 id="game-over-title" class="text-3xl font-bold mb-4">بازی تمام شد!</h2>
-            <p id="game-over-message" class="text-lg mb-6"></p>
-            <button id="new-game-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
-                بازگشت به لابی
-            </button>
-        </div>
-    </div>
-
-    <div id="toast-notification" class="fixed top-5 right-5 bg-red-600 text-white py-3 px-5 rounded-xl shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-[100]">
-        <p id="toast-message"></p>
-    </div>
-
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-700 text-white py-3 px-6 rounded-xl shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-[100]"></div>
 
     <script type="module">
-        // Import functions from the Firebase SDKs
+        // --- Firebase SDK Imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, serverTimestamp, increment, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Your web app's Firebase configuration from your Firebase project
-        const firebaseConfig = {
-          apiKey: "AIzaSyA4g1Jqk8bFjixc28ErOKxSX1U2Z6qz4cc",
-          authDomain: "goyonga-chess.firebaseapp.com",
-          projectId: "goyonga-chess",
-          storageBucket: "goyonga-chess.firebasestorage.app",
-          messagingSenderId: "340462578655",
-          appId: "1:340462578655:web:d7c36cfb541b9e10f9f26a",
-          measurementId: "G-KVXCVELMHN"
-        };
-
-        // Initialize Firebase
+        // --- Firebase Initialization ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-chess-app';
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // DOM Elements
-        const usernameScreen = document.getElementById('username-screen');
-        const lobbyScreen = document.getElementById('lobby-screen');
-        const gameScreen = document.getElementById('game-screen');
+        // --- DOM Elements ---
+        const screens = {
+            username: document.getElementById('username-screen'),
+            lobby: document.getElementById('lobby-screen'),
+            game: document.getElementById('game-screen'),
+        };
         const usernameInput = document.getElementById('username-input');
         const saveUsernameBtn = document.getElementById('save-username-btn');
         const changeUsernameBtn = document.getElementById('change-username-btn');
         const usernameDisplay = document.getElementById('username-display');
         const createGameBtn = document.getElementById('create-game-btn');
-        const joinGameBtn = document.getElementById('join-game-btn');
-        const gameIdInput = document.getElementById('game-id-input');
-        const gameIdDisplay = document.getElementById('game-id-display');
+        const openGamesList = document.getElementById('open-games-list');
+        const boardEl = document.getElementById('board');
+        const pgnDisplay = document.getElementById('pgn-display');
+        const gameStatus = document.getElementById('game-status');
+        const playerInfoEl = document.getElementById('player-info');
+        const opponentInfoEl = document.getElementById('opponent-info');
+        const resignBtn = document.getElementById('resign-btn');
         const copyGameIdBtn = document.getElementById('copy-game-id-btn');
-        const statusDisplay = document.getElementById('game-status');
-        const playerNameEl = document.getElementById('player-name');
-        const opponentNameEl = document.getElementById('opponent-name');
-        const playerTimerEl = document.getElementById('player-timer');
-        const opponentTimerEl = document.getElementById('opponent-timer');
-        const playerWinsEl = document.getElementById('player-wins');
-        const opponentWinsEl = document.getElementById('opponent-wins');
-        const newGameBtn = document.getElementById('new-game-btn');
+        const chatBox = document.getElementById('chat-box');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat-btn');
         const gameOverModal = document.getElementById('game-over-modal');
-        const toastContainer = document.getElementById('toast-notification');
-        const toastMessage = document.getElementById('toast-message');
+        const gameOverTitle = document.getElementById('game-over-title');
+        const gameOverMessage = document.getElementById('game-over-message');
+        const rematchBtn = document.getElementById('rematch-btn');
+        const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
+        const toastEl = document.getElementById('toast-notification');
 
-        // Game state variables
+        // --- Game State Variables ---
         let board = null;
         let game = new Chess();
         let currentUser = null;
@@ -253,486 +216,539 @@
         let currentGameId = null;
         let playerColor = null;
         let gameUnsubscribe = null;
+        let lobbyUnsubscribe = null;
         let timerInterval = null;
         let toastTimeout;
 
-        // --- Toast Notification Logic ---
-        function showToast(message, isError = true) {
-            clearTimeout(toastTimeout);
-            toastMessage.textContent = message;
-            toastContainer.className = 'fixed top-5 right-5 text-white py-3 px-5 rounded-xl shadow-lg transition-all duration-300 z-[100] opacity-100';
-            toastContainer.classList.add(isError ? 'bg-red-600' : 'bg-green-600');
-            toastTimeout = setTimeout(() => {
-                toastContainer.classList.add('opacity-0');
-            }, 3000);
-        }
+        // --- Sound Effects ---
+        const sounds = {
+            move: new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.0, release: 0.1 } }).toDestination(),
+            capture: new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.0, release: 0.2 } }).toDestination(),
+            check: new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.3 } }).toDestination(),
+            gameEnd: new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.5, sustain: 0.2, release: 0.5 } }).toDestination()
+        };
+        
+        // --- Utility Functions ---
+        const showScreen = (screenName) => {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            screens[screenName].classList.remove('hidden');
+        };
 
+        const showToast = (message) => {
+            clearTimeout(toastTimeout);
+            toastEl.textContent = message;
+            toastEl.classList.remove('opacity-0');
+            toastTimeout = setTimeout(() => toastEl.classList.add('opacity-0'), 3000);
+        };
+
+        const formatTime = (seconds) => {
+            if (seconds < 0) seconds = 0;
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        };
+
+        // --- Firebase References ---
+        const getGameRef = (gameId) => doc(db, `artifacts/${appId}/public/data/games`, gameId);
+        const getUserRef = (userId) => doc(db, `artifacts/${appId}/public/data/users`, userId);
+        const gamesColRef = collection(db, `artifacts/${appId}/public/data/games`);
+        
         // --- App Initialization ---
-        function initApp() {
-            onAuthStateChanged(auth, (user) => {
+        const initApp = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                showToast("خطا در اتصال به سرور. لطفا دوباره تلاش کنید.");
+            }
+
+            onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     currentUser = user;
-                    createGameBtn.disabled = false;
-                    joinGameBtn.disabled = false;
-                    const savedUsername = localStorage.getItem('chessUsername');
-                    if (savedUsername) {
-                        currentUsername = savedUsername;
+                    const userDoc = await getDoc(getUserRef(user.uid));
+                    if (userDoc.exists() && userDoc.data().username) {
+                        currentUsername = userDoc.data().username;
                         showLobby();
-                        checkUrlForGameId();
                     } else {
-                        showUsernameScreen();
+                        showScreen('username');
                     }
                 } else {
-                    signInAnonymously(auth).catch(error => {
-                        console.error("Anonymous sign-in failed:", error);
-                        showToast("خطا در اتصال به سرور. لطفا صفحه را مجددا بارگذاری کنید و از فعال بودن ورود ناشناس در پنل فایربیس مطمئن شوید.");
-                        createGameBtn.disabled = true;
-                        joinGameBtn.disabled = true;
-                    });
+                    showScreen('username');
                 }
             });
-        }
-        
-        function showUsernameScreen() {
-            usernameScreen.classList.remove('hidden');
-            lobbyScreen.classList.add('hidden');
-            gameScreen.classList.add('hidden');
-        }
+        };
 
-        function showLobby() {
-            usernameScreen.classList.add('hidden');
-            lobbyScreen.classList.remove('hidden');
-            gameScreen.classList.add('hidden');
-            usernameDisplay.textContent = currentUsername;
-            playerNameEl.textContent = currentUsername;
-        }
-
-        saveUsernameBtn.addEventListener('click', () => {
+        // --- Screen & UI Logic ---
+        saveUsernameBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
-            if (username.length < 2) {
-                showToast("نام کاربری باید حداقل ۲ حرف باشد.");
+            if (username.length < 3) {
+                showToast("نام کاربری باید حداقل ۳ حرف باشد.");
                 return;
             }
             currentUsername = username;
-            localStorage.setItem('chessUsername', username);
+            await setDoc(getUserRef(currentUser.uid), { username: username, wins: 0, losses: 0, draws: 0 }, { merge: true });
             showLobby();
-            checkUrlForGameId();
         });
 
-        changeUsernameBtn.addEventListener('click', () => {
-            localStorage.removeItem('chessUsername');
-            currentUsername = null;
-            showUsernameScreen();
-        });
-        
-        const getGameRef = (gameId) => doc(db, `chess-games/${gameId}`);
-        const getUserStatsRef = (userId) => doc(db, `chess-users/${userId}`);
+        changeUsernameBtn.addEventListener('click', () => showScreen('username'));
 
-        function checkUrlForGameId() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const gameId = urlParams.get('game');
-            if (gameId && currentUsername && currentUser) {
-                gameIdInput.value = gameId;
-                joinGame();
-            }
-        }
+        const showLobby = () => {
+            showScreen('lobby');
+            usernameDisplay.textContent = currentUsername;
+            if (gameUnsubscribe) gameUnsubscribe();
+            if (timerInterval) clearInterval(timerInterval);
+            currentGameId = null;
+            listenForOpenGames();
+        };
+
+        // --- Lobby Logic ---
+        const listenForOpenGames = () => {
+            if (lobbyUnsubscribe) lobbyUnsubscribe();
+            const q = query(gamesColRef, where("status", "==", "waiting"));
+            lobbyUnsubscribe = onSnapshot(q, (snapshot) => {
+                openGamesList.innerHTML = '';
+                if (snapshot.empty) {
+                    openGamesList.innerHTML = '<p class="text-gray-500 text-center">هیچ بازی منتظر حریف نیست. یکی بسازید!</p>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const gameData = doc.data();
+                    const gameEl = document.createElement('div');
+                    gameEl.className = "bg-gray-700 p-3 rounded-lg flex justify-between items-center";
+                    gameEl.innerHTML = `
+                        <div>
+                            <p class="font-bold">${gameData.players.p1.username}</p>
+                            <p class="text-sm text-gray-400">${gameData.timeControl / 60} دقیقه</p>
+                        </div>
+                        <button class="join-game-btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg" data-id="${doc.id}">ملحق شو</button>
+                    `;
+                    openGamesList.appendChild(gameEl);
+                });
+            });
+        };
 
         createGameBtn.addEventListener('click', async () => {
-            if (!currentUser || !currentUsername) return showToast("لطفا ابتدا نام کاربری خود را تنظیم کنید.");
             const timeControl = parseInt(document.getElementById('time-control').value) * 60;
-            currentGameId = `game-${crypto.randomUUID().substring(0, 8)}`;
-            
+            const newGameId = `game-${crypto.randomUUID().substring(0, 8)}`;
             const gameData = {
-                player1Id: currentUser.uid,
-                player1Username: currentUsername,
-                player2Id: null,
-                player2Username: null,
-                fen: game.fen(),
-                pgn: game.pgn(),
-                status: 'waiting',
-                timeControl: timeControl,
-                player1Time: timeControl,
-                player2Time: timeControl,
+                fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                status: 'waiting', // waiting, inprogress, mate, draw, timeout, resign
                 turn: 'w',
-                whitePlayerId: null,
-                blackPlayerId: null,
-                createdAt: new Date(),
-                lastMoveTimestamp: Date.now(),
+                players: {
+                    p1: { userId: currentUser.uid, username: currentUsername, color: null },
+                    p2: null
+                },
+                timeControl: timeControl,
+                timers: { p1: timeControl, p2: timeControl },
+                lastMoveTimestamp: serverTimestamp(),
                 winner: null,
+                chat: [],
+                pgn: "",
+                rematchOffer: null,
+                createdAt: serverTimestamp()
             };
+            await setDoc(getGameRef(newGameId), gameData);
+            await setupGame(newGameId);
+        });
 
-            try {
-                await setDoc(getGameRef(currentGameId), gameData);
-                history.pushState(null, '', `?game=${currentGameId}`);
-                await setupGame(currentGameId);
-            } catch (error) {
-                console.error("Error creating game:", error);
-                showToast("خطا در ساخت بازی.");
+        document.addEventListener('click', e => {
+            if (e.target && e.target.classList.contains('join-game-btn')) {
+                const gameId = e.target.getAttribute('data-id');
+                joinGame(gameId);
             }
         });
 
-        joinGameBtn.addEventListener('click', joinGame);
-
-        async function joinGame() {
-            if (!currentUser || !currentUsername) return showToast("لطفا ابتدا نام کاربری خود را تنظیم کنید.");
-            const gameId = gameIdInput.value.trim();
-            if (!gameId) return showToast("لطفا شناسه بازی را وارد کنید.");
+        const joinGame = async (gameId) => {
+            const gameRef = getGameRef(gameId);
+            const gameDoc = await getDoc(gameRef);
+            if (!gameDoc.exists()) return showToast("این بازی دیگر موجود نیست.");
             
+            const gameData = gameDoc.data();
+            if (gameData.players.p2) return showToast("این بازی پر است.");
+
+            const colorAssignment = Math.random() < 0.5 ? ['w', 'b'] : ['b', 'w'];
+            
+            await updateDoc(gameRef, {
+                status: 'inprogress',
+                'players.p1.color': colorAssignment[0],
+                'players.p2': { userId: currentUser.uid, username: currentUsername, color: colorAssignment[1] },
+                lastMoveTimestamp: serverTimestamp()
+            });
+            await setupGame(gameId);
+        };
+
+        // --- Game Setup ---
+        const setupGame = async (gameId) => {
+            if (lobbyUnsubscribe) lobbyUnsubscribe();
             currentGameId = gameId;
-            const gameRef = getGameRef(currentGameId);
-
-            try {
-                const gameDoc = await getDoc(gameRef);
-                if (!gameDoc.exists()) {
-                    return showToast("بازی با این شناسه یافت نشد.");
-                }
-
-                const gameData = gameDoc.data();
-                if (gameData.player2Id && gameData.player1Id !== currentUser.uid && gameData.player2Id !== currentUser.uid) {
-                    return showToast("این بازی پر است.");
-                }
-
-                if (gameData.player1Id !== currentUser.uid && !gameData.player2Id) {
-                    const updates = {
-                        player2Id: currentUser.uid,
-                        player2Username: currentUsername,
-                        status: 'inprogress',
-                    };
-                    
-                    if (Math.random() < 0.5) {
-                        updates.whitePlayerId = gameData.player1Id;
-                        updates.blackPlayerId = currentUser.uid;
-                    } else {
-                        updates.whitePlayerId = currentUser.uid;
-                        updates.blackPlayerId = gameData.player1Id;
-                    }
-                    await updateDoc(gameRef, updates);
-                }
-                history.pushState(null, '', `?game=${currentGameId}`);
-                await setupGame(currentGameId);
-            } catch (error) {
-                console.error("Error joining game:", error);
-                showToast("خطا در ملحق شدن به بازی.");
-            }
-        }
-
-        async function setupGame(gameId) {
-            lobbyScreen.classList.add('hidden');
-            usernameScreen.classList.add('hidden');
-            gameScreen.classList.remove('hidden');
-            gameIdDisplay.textContent = gameId;
+            showScreen('game');
 
             if (gameUnsubscribe) gameUnsubscribe();
-
             gameUnsubscribe = onSnapshot(getGameRef(gameId), (doc) => {
-                if (!doc.exists()) return;
-                const gameData = doc.data();
-                handleGameStateUpdate(gameData);
+                if (!doc.exists()) {
+                    showToast("بازی حذف شده یا به پایان رسیده است.");
+                    showLobby();
+                    return;
+                }
+                handleGameStateUpdate(doc.data());
             });
-        }
-        
-        async function fetchWinCounts(player1Id, player2Id) {
-            try {
-                const p1Id = player1Id === currentUser.uid ? player1Id : player2Id;
-                const p2Id = player1Id === currentUser.uid ? player2Id : player1Id;
+        };
 
-                if(p1Id) {
-                    const player1StatsDoc = await getDoc(getUserStatsRef(p1Id));
-                    playerWinsEl.textContent = player1StatsDoc.exists() ? player1StatsDoc.data().wins || 0 : 0;
-                }
-                if(p2Id) {
-                    const player2StatsDoc = await getDoc(getUserStatsRef(p2Id));
-                    opponentWinsEl.textContent = player2StatsDoc.exists() ? player2StatsDoc.data().wins || 0 : 0;
-                }
-            } catch(e) {
-                console.error("Error fetching win counts", e);
-            }
-        }
-
-        function handleGameStateUpdate(gameData) {
-            if (currentUser.uid === gameData.player1Id) {
-                playerNameEl.textContent = gameData.player1Username || "بازیکن ۱";
-                opponentNameEl.textContent = gameData.player2Username || "در انتظار...";
-            } else {
-                playerNameEl.textContent = gameData.player2Username || "بازیکن ۲";
-                opponentNameEl.textContent = gameData.player1Username || "در انتظار...";
-            }
-
-            if (gameData.whitePlayerId === currentUser.uid) playerColor = 'w';
-            else if (gameData.blackPlayerId === currentUser.uid) playerColor = 'b';
+        // --- Game State Handling ---
+        const handleGameStateUpdate = (gameData) => {
+            // Determine player and opponent
+            const amIPlayer1 = gameData.players.p1.userId === currentUser.uid;
+            const player = amIPlayer1 ? gameData.players.p1 : gameData.players.p2;
+            const opponent = amIPlayer1 ? gameData.players.p2 : gameData.players.p1;
+            playerColor = player?.color;
             
-            fetchWinCounts(gameData.player1Id, gameData.player2Id);
-            
+            // Load game state
             const isNewFen = game.fen() !== gameData.fen;
             if (isNewFen) {
                 game.load(gameData.fen);
+                highlightLastMove();
+                playMoveSound(gameData.pgn);
             }
             
+            // Initialize or update board
             if (!board) {
-                const config = {
+                board = Chessboard('board', {
                     draggable: true,
-                    position: gameData.fen,
+                    position: game.fen(),
                     orientation: playerColor === 'w' ? 'white' : 'black',
                     onDragStart: onDragStart,
                     onDrop: onDrop,
-                    onSnapEnd: onSnapEnd,
                     pieceTheme: 'https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png'
-                };
-                board = Chessboard('board', config);
+                });
                 $(window).resize(board.resize);
             } else {
-                board.orientation(playerColor === 'w' ? 'white' : 'black');
-                board.position(gameData.fen, !isNewFen); // use smooth animation if only orientation changes
+                if (board.orientation() !== (playerColor === 'w' ? 'white' : 'black')) {
+                    board.orientation(playerColor === 'w' ? 'white' : 'black');
+                }
+                board.position(game.fen());
             }
-            
-            updateStatus(gameData);
+
+            // Update UI elements
+            updatePlayerInfo(playerInfoEl, player, amIPlayer1 ? gameData.timers.p1 : gameData.timers.p2);
+            updatePlayerInfo(opponentInfoEl, opponent, amIPlayer1 ? gameData.timers.p2 : gameData.timers.p1, true);
+            updateStatus(gameData, playerColor);
+            updatePgn(gameData.pgn);
+            updateChat(gameData.chat);
             updateTimers(gameData);
-            highlightLastMove();
-            
+
+            // Handle game over
             if (gameData.status !== 'inprogress' && gameData.status !== 'waiting') {
-                showGameOverModal(gameData);
+                showGameOverModal(gameData, player);
+            } else {
+                hideGameOverModal();
             }
-        }
+        };
 
-        function removeHighlights(className) {
-            $(`#board .square-55d63`).removeClass(className);
-        }
-
-        function onDragStart(source, piece, position, orientation) {
-            // --- Permissions check ---
-            if (game.game_over() || game.turn() !== playerColor) return false;
-            if ((game.turn() === 'w' && piece.search(/^b/) !== -1) || (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
-                return false;
+        // --- UI Update Functions ---
+        const updatePlayerInfo = (el, player, time, isOpponent = false) => {
+            if (!player) {
+                el.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-user-clock text-4xl text-gray-500"></i>
+                        <div>
+                            <h3 class="font-bold text-lg">در انتظار حریف...</h3>
+                        </div>
+                    </div>
+                `;
+                return;
             }
+            el.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-user-circle text-4xl ${isOpponent ? 'text-gray-400' : 'text-green-400'}"></i>
+                    <div>
+                        <h3 class="font-bold text-lg truncate">${player.username}</h3>
+                        <div class="text-sm text-gray-400">
+                            <i class="fas fa-chess-${player.color === 'w' ? 'pawn' : 'chess-pawn'}" style="color: ${player.color === 'w' ? '#fff' : '#000'}"></i>
+                            ${player.color === 'w' ? 'سفید' : 'سیاه'}
+                        </div>
+                    </div>
+                </div>
+                <div class="font-mono text-3xl font-bold text-white">${formatTime(time)}</div>
+            `;
+        };
 
-            // --- Highlight possible moves ---
-            const moves = game.moves({
-                square: source,
-                verbose: true
-            });
+        const updateStatus = (gameData, myColor) => {
+            let statusText = '';
+            let isMyTurn = gameData.turn === myColor;
+            gameStatus.classList.remove('status-pulse', 'bg-red-700', 'bg-green-700');
 
-            if (moves.length === 0) return;
-
-            removeHighlights('highlight-possible-move');
-            for (let i = 0; i < moves.length; i++) {
-                $(`.square-${moves[i].to}`).addClass('highlight-possible-move');
+            switch(gameData.status) {
+                case 'waiting': statusText = 'در انتظار حریف...'; break;
+                case 'inprogress':
+                    statusText = `نوبت ${gameData.turn === 'w' ? 'سفید' : 'سیاه'}`;
+                    if (game.in_check()) statusText += ' - کیش!';
+                    gameStatus.classList.add(isMyTurn ? 'bg-green-700' : 'bg-gray-700');
+                    if(isMyTurn) gameStatus.classList.add('status-pulse');
+                    break;
+                case 'mate': statusText = `مات! ${gameData.winner.username} برنده شد.`; gameStatus.classList.add('bg-red-700'); break;
+                case 'draw': statusText = 'بازی مساوی شد.'; gameStatus.classList.add('bg-gray-600'); break;
+                case 'timeout': statusText = `پایان زمان! ${gameData.winner.username} برنده شد.`; gameStatus.classList.add('bg-red-700'); break;
+                case 'resign': statusText = `${gameData.winner.username} با تسلیم حریف برنده شد.`; gameStatus.classList.add('bg-red-700'); break;
             }
-        }
+            gameStatus.textContent = statusText;
+        };
 
-        async function onDrop(source, target) {
-            removeHighlights('highlight-possible-move');
-            
-            let move = game.move({ from: source, to: target, promotion: 'q' });
+        const updatePgn = (pgn) => {
+            const history = game.history({ verbose: true });
+            pgnDisplay.innerHTML = history.map((move, i) => {
+                if (i % 2 === 0) {
+                    return `<div class="grid grid-cols-3 gap-2"><span>${Math.floor(i / 2) + 1}.</span> <span>${move.san}</span>`;
+                } else {
+                    return `<span>${move.san}</span></div>`;
+                }
+            }).join('');
+            pgnDisplay.scrollTop = pgnDisplay.scrollHeight;
+        };
+        
+        const updateChat = (chat) => {
+            chatBox.innerHTML = chat.map(msg => `
+                <div class="text-sm">
+                    <span class="font-bold ${msg.userId === currentUser.uid ? 'text-indigo-400' : 'text-gray-400'}">${msg.username}:</span>
+                    <span class="text-gray-200">${msg.message}</span>
+                </div>
+            `).join('');
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        const updateTimers = (gameData) => {
+            clearInterval(timerInterval);
+            if (gameData.status !== 'inprogress') return;
+
+            timerInterval = setInterval(async () => {
+                const now = Date.now();
+                const lastMoveTime = gameData.lastMoveTimestamp?.toDate().getTime() || now;
+                const elapsed = (now - lastMoveTime) / 1000;
+
+                const amIPlayer1 = gameData.players.p1.userId === currentUser.uid;
+                const turnPlayer = gameData.turn === gameData.players.p1.color ? 'p1' : 'p2';
+                
+                let p1Time = gameData.timers.p1;
+                let p2Time = gameData.timers.p2;
+
+                if (turnPlayer === 'p1') p1Time -= elapsed;
+                else p2Time -= elapsed;
+
+                updatePlayerInfo(playerInfoEl, amIPlayer1 ? gameData.players.p1 : gameData.players.p2, amIPlayer1 ? p1Time : p2Time);
+                updatePlayerInfo(opponentInfoEl, amIPlayer1 ? gameData.players.p2 : gameData.players.p1, amIPlayer1 ? p2Time : p1Time, true);
+                
+                // Timeout check (only one player should do this)
+                if ((p1Time <= 0 || p2Time <= 0) && amIPlayer1) {
+                    clearInterval(timerInterval);
+                    const loser = p1Time <= 0 ? gameData.players.p1 : gameData.players.p2;
+                    const winner = p1Time <= 0 ? gameData.players.p2 : gameData.players.p1;
+                    if (winner && loser) {
+                       await endGame(gameData, 'timeout', winner, loser);
+                    }
+                }
+            }, 1000);
+        };
+
+        // --- Game Logic ---
+        const onDragStart = (source, piece) => {
+            return !game.game_over() &&
+                   game.turn() === playerColor &&
+                   piece.startsWith(playerColor);
+        };
+
+        const onDrop = async (source, target) => {
+            const move = game.move({ from: source, to: target, promotion: 'q' });
             if (move === null) return 'snapback';
-            
+
             const gameRef = getGameRef(currentGameId);
             const gameDoc = await getDoc(gameRef);
-            if (!gameDoc.exists()) return;
-            
             const gameData = gameDoc.data();
-            const timeNow = Date.now();
-            const timeSpent = (timeNow - gameData.lastMoveTimestamp) / 1000;
+            
+            const now = Date.now();
+            const lastMoveTime = gameData.lastMoveTimestamp?.toDate().getTime() || now;
+            const timeSpent = (now - lastMoveTime) / 1000;
+            
+            const amIPlayer1 = gameData.players.p1.userId === currentUser.uid;
+            const myTimerKey = amIPlayer1 ? 'timers.p1' : 'timers.p2';
             
             const updates = {
                 fen: game.fen(),
                 pgn: game.pgn(),
                 turn: game.turn(),
-                lastMoveTimestamp: timeNow,
+                lastMoveTimestamp: serverTimestamp(),
+                [myTimerKey]: gameData.timers[amIPlayer1 ? 'p1' : 'p2'] - timeSpent
+            };
+            
+            if (game.game_over()) {
+                const winnerPlayer = game.turn() === 'b' ? 
+                    (gameData.players.p1.color === 'w' ? gameData.players.p1 : gameData.players.p2) : 
+                    (gameData.players.p1.color === 'b' ? gameData.players.p1 : gameData.players.p2);
+                const loserPlayer = game.turn() === 'b' ? 
+                    (gameData.players.p1.color === 'b' ? gameData.players.p1 : gameData.players.p2) : 
+                    (gameData.players.p1.color === 'w' ? gameData.players.p1 : gameData.players.p2);
+                
+                if (game.in_checkmate()) {
+                    await endGame(gameData, 'mate', winnerPlayer, loserPlayer, updates);
+                } else if (game.in_draw() || game.in_stalemate() || game.in_threefold_repetition()) {
+                    await endGame(gameData, 'draw', null, null, updates);
+                }
+            } else {
+                await updateDoc(gameRef, updates);
+            }
+        };
+
+        const endGame = async (gameData, reason, winner, loser, moveUpdates = {}) => {
+            clearInterval(timerInterval);
+            const finalUpdates = {
+                ...moveUpdates,
+                status: reason,
+                winner: winner || null,
             };
 
-            if (playerColor === 'w') {
-                if(gameData.whitePlayerId === gameData.player1Id) updates.player1Time = gameData.player1Time - timeSpent;
-                else updates.player2Time = gameData.player2Time - timeSpent;
-            } else {
-                if(gameData.blackPlayerId === gameData.player1Id) updates.player1Time = gameData.player1Time - timeSpent;
-                else updates.player2Time = gameData.player2Time - timeSpent;
-            }
-            
-            if (game.in_checkmate()) {
-                updates.status = 'mate';
-                updates.winner = currentUser.uid;
-                await incrementPlayerWin(updates.winner);
-            } else if (game.in_draw()) {
-                updates.status = 'draw';
-            }
+            const batch = writeBatch(db);
+            batch.update(getGameRef(currentGameId), finalUpdates);
 
-            await updateDoc(gameRef, updates);
-        }
-        
-        async function incrementPlayerWin(winnerId) {
-            if (!winnerId) return;
-            const userStatsRef = getUserStatsRef(winnerId);
-            try {
-                await updateDoc(userStatsRef, { wins: increment(1) });
-            } catch (error) {
-                if (error.code === 'not-found') {
-                    await setDoc(userStatsRef, { wins: 1 });
-                } else {
-                    console.error("Failed to increment win count", error);
+            if (reason === 'mate' || reason === 'timeout' || reason === 'resign') {
+                batch.update(getUserRef(winner.userId), { wins: increment(1) });
+                batch.update(getUserRef(loser.userId), { losses: increment(1) });
+            } else if (reason === 'draw') {
+                batch.update(getUserRef(gameData.players.p1.userId), { draws: increment(1) });
+                if (gameData.players.p2) {
+                    batch.update(getUserRef(gameData.players.p2.userId), { draws: increment(1) });
                 }
             }
-        }
+            await batch.commit();
+        };
 
-        function onSnapEnd() {
-            board.position(game.fen());
-        }
-        
-        function highlightLastMove() {
-            removeHighlights('highlight-last-move');
+        const highlightLastMove = () => {
+            document.querySelectorAll('.highlight-last').forEach(el => el.classList.remove('highlight-last'));
+            document.querySelectorAll('.highlight-check').forEach(el => el.classList.remove('highlight-check'));
+            
             const history = game.history({ verbose: true });
-            if (history.length === 0) return;
-            const lastMove = history[history.length - 1];
-            $(`.square-${lastMove.from}`).parent().addClass('highlight-last-move');
-            $(`.square-${lastMove.to}`).parent().addClass('highlight-last-move');
-        }
-
-        function updateStatus(gameData) {
-            let statusText = '';
-            if (gameData.status === 'waiting') {
-                statusText = 'در انتظار حریف...';
-            } else if (gameData.status === 'inprogress') {
-                const turnColor = game.turn() === 'w' ? 'سفید' : 'سیاه';
-                statusText = `نوبت ${turnColor}`;
-                if (game.in_check()) {
-                    statusText += ' - کیش!';
+            if (history.length > 0) {
+                const lastMove = history[history.length - 1];
+                document.querySelector(`.square-${lastMove.from}`).parentElement.classList.add('highlight-last');
+                document.querySelector(`.square-${lastMove.to}`).parentElement.classList.add('highlight-last');
+            }
+            if (game.in_check()) {
+                const kingPos = findKing(game.turn());
+                if(kingPos) document.querySelector(`.square-${kingPos}`).parentElement.classList.add('highlight-check');
+            }
+        };
+        
+        const findKing = (color) => {
+            const boardState = game.board();
+            for(let i = 0; i < 8; i++) {
+                for(let j = 0; j < 8; j++) {
+                    const square = boardState[i][j];
+                    if(square && square.type === 'k' && square.color === color) {
+                        return square.square;
+                    }
                 }
-            } else { return; }
-            
-            statusDisplay.textContent = statusText;
-            statusDisplay.className = 'w-full text-center mb-3 p-3 rounded-lg font-bold text-lg transition-colors';
-            if (game.turn() === playerColor && gameData.status === 'inprogress') {
-                statusDisplay.classList.add('bg-green-800', 'text-white');
+            }
+            return null;
+        };
+
+        const playMoveSound = (pgn) => {
+            if (!pgn) return;
+            if (pgn.includes('#')) {
+                sounds.gameEnd.triggerAttackRelease("C4", "0.5s");
+            } else if (pgn.includes('+')) {
+                sounds.check.triggerAttackRelease("G#4", "0.3s");
+            } else if (pgn.includes('x')) {
+                sounds.capture.triggerAttackRelease("C3", "0.2s");
             } else {
-                 statusDisplay.classList.add('bg-gray-800', 'text-gray-300');
+                sounds.move.triggerAttackRelease("C4", "0.1s");
             }
-        }
-        
-        function formatTime(seconds) {
-            if (seconds < 0) seconds = 0;
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        }
+        };
 
-        function updateTimers(gameData) {
-            clearInterval(timerInterval);
-
-            const updateDisplay = () => {
-                const timeNow = Date.now();
-                const elapsed = (timeNow - gameData.lastMoveTimestamp) / 1000;
-                
-                let p1Time = gameData.player1Time;
-                let p2Time = gameData.player2Time;
-
-                if (gameData.status === 'inprogress') {
-                    if (gameData.turn === 'w') {
-                        if (gameData.whitePlayerId === gameData.player1Id) p1Time -= elapsed;
-                        else p2Time -= elapsed;
-                    } else {
-                        if (gameData.blackPlayerId === gameData.player1Id) p1Time -= elapsed;
-                        else p2Time -= elapsed;
-                    }
-                }
-                
-                const myTimerEl = currentUser.uid === gameData.player1Id ? playerTimerEl : opponentTimerEl;
-                const opponentTimerElRef = currentUser.uid === gameData.player1Id ? opponentTimerEl : playerTimerEl;
-                
-                myTimerEl.textContent = formatTime(currentUser.uid === gameData.player1Id ? p1Time : p2Time);
-                if(gameData.player2Id) {
-                    opponentTimerElRef.textContent = formatTime(currentUser.uid === gameData.player1Id ? p2Time : p1Time);
-                }
-
-                if ((p1Time <= 0 || p2Time <= 0) && gameData.status === 'inprogress') {
-                    clearInterval(timerInterval);
-                    if (currentUser.uid === gameData.player1Id || currentUser.uid === gameData.player2Id) {
-                        const timedOutPlayerId = p1Time <= 0 ? (gameData.whitePlayerId === gameData.player1Id ? gameData.player1Id : gameData.player2Id) : (gameData.blackPlayerId === gameData.player1Id ? gameData.player1Id : gameData.player2Id);
-                        
-                        const winnerId = p1Time <= 0 ? gameData.player2Id : gameData.player1Id;
-                        if(gameData.turn === 'w' && p1Time <=0 && gameData.whitePlayerId === gameData.player1Id) {
-                             updateDoc(getGameRef(currentGameId), { status: 'timeout', winner: gameData.player2Id }).then(() => incrementPlayerWin(gameData.player2Id));
-                        } else if(gameData.turn === 'w' && p2Time <=0 && gameData.whitePlayerId === gameData.player2Id){
-                             updateDoc(getGameRef(currentGameId), { status: 'timeout', winner: gameData.player1Id }).then(() => incrementPlayerWin(gameData.player1Id));
-                        } else if(gameData.turn === 'b' && p1Time <=0 && gameData.blackPlayerId === gameData.player1Id){
-                            updateDoc(getGameRef(currentGameId), { status: 'timeout', winner: gameData.player2Id }).then(() => incrementPlayerWin(gameData.player2Id));
-                        } else if(gameData.turn === 'b' && p2Time <=0 && gameData.blackPlayerId === gameData.player2Id){
-                            updateDoc(getGameRef(currentGameId), { status: 'timeout', winner: gameData.player1Id }).then(() => incrementPlayerWin(gameData.player1Id));
-                        }
-                    }
-                }
-            };
-            
-            updateDisplay();
-            if (gameData.status === 'inprogress') {
-                timerInterval = setInterval(updateDisplay, 1000);
+        // --- Event Listeners ---
+        resignBtn.addEventListener('click', async () => {
+            if (confirm('آیا از تسلیم شدن مطمئن هستید؟')) {
+                const gameDoc = await getDoc(getGameRef(currentGameId));
+                const gameData = gameDoc.data();
+                const amIPlayer1 = gameData.players.p1.userId === currentUser.uid;
+                const winner = amIPlayer1 ? gameData.players.p2 : gameData.players.p1;
+                const loser = amIPlayer1 ? gameData.players.p1 : gameData.players.p2;
+                await endGame(gameData, 'resign', winner, loser);
             }
-        }
-        
-        function showGameOverModal(gameData) {
-            clearInterval(timerInterval);
-            const titleEl = document.getElementById('game-over-title');
-            const messageEl = document.getElementById('game-over-message');
-            const isWinner = gameData.winner === currentUser.uid;
+        });
+
+        copyGameIdBtn.addEventListener('click', () => {
+            const gameLink = `${window.location.origin}${window.location.pathname}?game=${currentGameId}`;
+            navigator.clipboard.writeText(gameLink).then(() => {
+                showToast('لینک بازی کپی شد!');
+            }).catch(() => showToast('خطا در کپی کردن لینک.'));
+        });
+
+        const sendChatMessage = async () => {
+            const message = chatInput.value.trim();
+            if (!message) return;
             
-            if (gameData.status === 'mate') {
-                titleEl.textContent = isWinner ? 'شما بردید!' : 'شما باختید!';
-                messageEl.textContent = 'حریف مات شد.';
-            } else if (gameData.status === 'timeout') {
-                titleEl.textContent = isWinner ? 'شما بردید!' : 'شما باختید!';
-                messageEl.textContent = 'زمان حریف تمام شد.';
-            } else if (gameData.status === 'draw') {
-                titleEl.textContent = 'مساوی!';
-                messageEl.textContent = 'بازی با نتیجه مساوی به پایان رسید.';
-            } else if (gameData.status === 'resign') {
-                 titleEl.textContent = isWinner ? 'شما بردید!' : 'شما باختید!';
-                messageEl.textContent = 'حریف تسلیم شد.';
+            const gameRef = getGameRef(currentGameId);
+            const gameDoc = await getDoc(gameRef);
+            const gameData = gameDoc.data();
+            
+            const newChat = [...gameData.chat, { userId: currentUser.uid, username: currentUsername, message }];
+            await updateDoc(gameRef, { chat: newChat });
+            chatInput.value = '';
+        };
+        sendChatBtn.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+
+        // --- Modal Logic ---
+        const showGameOverModal = (gameData, player) => {
+            const isWinner = gameData.winner && gameData.winner.userId === player.userId;
+            
+            switch (gameData.status) {
+                case 'mate':
+                    gameOverTitle.textContent = isWinner ? 'پیروزی!' : 'شکست!';
+                    gameOverMessage.textContent = `شما با مات کردن حریف برنده شدید.`;
+                    if(!isWinner) gameOverMessage.textContent = `شما مات شدید!`;
+                    break;
+                case 'timeout':
+                    gameOverTitle.textContent = isWinner ? 'پیروزی!' : 'شکست!';
+                    gameOverMessage.textContent = `شما با تمام شدن زمان حریف برنده شدید.`;
+                     if(!isWinner) gameOverMessage.textContent = `زمان شما به پایان رسید!`;
+                    break;
+                case 'resign':
+                    gameOverTitle.textContent = isWinner ? 'پیروزی!' : 'شکست!';
+                    gameOverMessage.textContent = `حریف شما تسلیم شد.`;
+                     if(!isWinner) gameOverMessage.textContent = `شما تسلیم شدید.`;
+                    break;
+                case 'draw':
+                    gameOverTitle.textContent = 'مساوی!';
+                    gameOverMessage.textContent = 'بازی با نتیجه مساوی خاتمه یافت.';
+                    break;
             }
             
             gameOverModal.classList.remove('opacity-0', 'pointer-events-none');
             gameOverModal.querySelector('.modal-content').classList.remove('scale-95');
-        }
+        };
 
-        newGameBtn.addEventListener('click', () => {
-            game = new Chess();
-            board = null;
-            currentGameId = null;
-            playerColor = null;
-            if(gameUnsubscribe) gameUnsubscribe();
-            clearInterval(timerInterval);
+        const hideGameOverModal = () => {
             gameOverModal.classList.add('opacity-0', 'pointer-events-none');
             gameOverModal.querySelector('.modal-content').classList.add('scale-95');
-            history.pushState(null, '', window.location.pathname);
+        };
+
+        backToLobbyBtn.addEventListener('click', () => {
+            hideGameOverModal();
             showLobby();
         });
         
-        copyGameIdBtn.addEventListener('click', () => {
-            const gameLink = `${window.location.origin}${window.location.pathname}?game=${currentGameId}`;
-            // Using a fallback for clipboard API for wider compatibility
-            try {
-                navigator.clipboard.writeText(gameLink).then(() => {
-                    showToast('لینک بازی کپی شد!', false);
-                }, () => {
-                    throw new Error();
-                });
-            } catch (err) {
-                 // Fallback for older browsers
-                const textArea = document.createElement("textarea");
-                textArea.value = gameLink;
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showToast('لینک بازی کپی شد!', false);
-                } catch (err) {
-                    showToast('خطا در کپی کردن لینک.');
-                }
-                document.body.removeChild(textArea);
-            }
+        rematchBtn.addEventListener('click', () => {
+            // Rematch logic can be implemented here
+            showToast("درخواست بازی مجدد ارسال شد (این قابلیت در حال توسعه است).");
+            hideGameOverModal();
+            showLobby();
         });
 
-        // Start the application
-        initApp();
 
+        // --- Start Application ---
+        initApp();
     </script>
 </body>
 </html>

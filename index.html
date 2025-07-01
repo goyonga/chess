@@ -168,12 +168,20 @@
     <script type="module">
         // --- Firebase SDK Imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, serverTimestamp, increment, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Initialization ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-chess-app';
+        // FIX: Using the specific Firebase config from the user's project
+        const firebaseConfig = {
+          apiKey: "AIzaSyA4g1Jqk8bFjixc28ErOKxSX1U2Z6qz4cc",
+          authDomain: "goyonga-chess.firebaseapp.com",
+          projectId: "goyonga-chess",
+          storageBucket: "goyonga-chess.appspot.com", // Corrected storage bucket
+          messagingSenderId: "340462578655",
+          appId: "1:340462578655:web:d7c36cfb541b9e10f9f26a",
+          measurementId: "G-KVXCVELMHN"
+        };
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -238,7 +246,7 @@
             clearTimeout(toastTimeout);
             toastEl.textContent = message;
             toastEl.classList.remove('opacity-0');
-            toastTimeout = setTimeout(() => toastEl.classList.add('opacity-0'), 5000); // Increased duration for error messages
+            toastTimeout = setTimeout(() => toastEl.classList.add('opacity-0'), 5000);
         };
 
         const formatTime = (seconds) => {
@@ -249,23 +257,18 @@
         };
 
         // --- Firebase References ---
-        const getGameRef = (gameId) => doc(db, `artifacts/${appId}/public/data/games`, gameId);
-        const getUserRef = (userId) => doc(db, `artifacts/${appId}/public/data/users`, userId);
-        const gamesColRef = collection(db, `artifacts/${appId}/public/data/games`);
+        // FIX: Simplified database paths
+        const getGameRef = (gameId) => doc(db, "games", gameId);
+        const getUserRef = (userId) => doc(db, "users", userId);
+        const gamesColRef = collection(db, "games");
         
         // --- App Initialization ---
         const initApp = async () => {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (error) {
                 console.error("Authentication failed:", error);
-                console.error("Firebase Error Code:", error.code);
-                console.error("Firebase Error Message:", error.message);
-                showToast(`خطا در احراز هویت: ${error.code}`); // Show specific error code
+                showToast(`خطا در احراز هویت: ${error.code}`);
             }
 
             onAuthStateChanged(auth, async (user) => {
@@ -287,7 +290,7 @@
                 } catch (error) {
                     console.error("Error in onAuthStateChanged:", error);
                     showToast(`خطا در خواندن اطلاعات کاربر: ${error.code}`);
-                    showScreen('username'); // Fallback to username screen on error
+                    showScreen('username');
                 }
             });
         };
@@ -358,7 +361,7 @@
             const newGameId = `game-${crypto.randomUUID().substring(0, 8)}`;
             const gameData = {
                 fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                status: 'waiting', // waiting, inprogress, mate, draw, timeout, resign
+                status: 'waiting',
                 turn: 'w',
                 players: {
                     p1: { userId: currentUser.uid, username: currentUsername, color: null },
@@ -700,7 +703,6 @@
 
         // --- Event Listeners ---
         resignBtn.addEventListener('click', async () => {
-            // Using a custom modal instead of confirm()
             showToast("برای تسلیم شدن دکمه را نگه دارید");
         });
 

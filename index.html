@@ -172,12 +172,11 @@
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, serverTimestamp, increment, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Initialization ---
-        // FIX: Using the specific Firebase config from the user's project
         const firebaseConfig = {
           apiKey: "AIzaSyA4g1Jqk8bFjixc28ErOKxSX1U2Z6qz4cc",
           authDomain: "goyonga-chess.firebaseapp.com",
           projectId: "goyonga-chess",
-          storageBucket: "goyonga-chess.appspot.com", // Corrected storage bucket
+          storageBucket: "goyonga-chess.appspot.com",
           messagingSenderId: "340462578655",
           appId: "1:340462578655:web:d7c36cfb541b9e10f9f26a",
           measurementId: "G-KVXCVELMHN"
@@ -227,14 +226,6 @@
         let lobbyUnsubscribe = null;
         let timerInterval = null;
         let toastTimeout;
-
-        // --- Sound Effects ---
-        const sounds = {
-            move: new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.0, release: 0.1 } }).toDestination(),
-            capture: new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.0, release: 0.2 } }).toDestination(),
-            check: new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.3 } }).toDestination(),
-            gameEnd: new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.5, sustain: 0.2, release: 0.5 } }).toDestination()
-        };
         
         // --- Utility Functions ---
         const showScreen = (screenName) => {
@@ -257,7 +248,6 @@
         };
 
         // --- Firebase References ---
-        // FIX: Simplified database paths
         const getGameRef = (gameId) => doc(db, "games", gameId);
         const getUserRef = (userId) => doc(db, "users", userId);
         const gamesColRef = collection(db, "games");
@@ -297,6 +287,10 @@
 
         // --- Screen & UI Logic ---
         saveUsernameBtn.addEventListener('click', async () => {
+            if (Tone.context.state !== 'running') {
+                await Tone.start();
+            }
+
             if (!currentUser) {
                 showToast("هنوز به سرور متصل نشده‌اید. لطفا صبر کنید.");
                 return;
@@ -444,13 +438,25 @@
             const opponent = amIPlayer1 ? gameData.players.p2 : gameData.players.p1;
             playerColor = player?.color;
             
-            const isNewFen = game.fen() !== gameData.fen;
-            if (isNewFen) {
-                game.load(gameData.fen);
-                highlightLastMove();
+            const fenFromDb = gameData.fen;
+            const currentFenOnBoard = board ? board.fen() : game.fen();
+            
+            if (currentFenOnBoard !== fenFromDb) {
+                const isFenValid = game.load(fenFromDb);
+
+                if (!isFenValid) {
+                    console.error("Invalid FEN received from database:", fenFromDb);
+                    showToast("خطای بازی: وضعیت نامعتبر دریافت شد.");
+                    return;
+                }
+                
+                if (board) {
+                    board.position(game.fen());
+                }
+
                 playMoveSound(gameData.pgn);
             }
-            
+
             if (!board) {
                 board = Chessboard('board', {
                     draggable: true,
@@ -458,16 +464,17 @@
                     orientation: playerColor === 'w' ? 'white' : 'black',
                     onDragStart: onDragStart,
                     onDrop: onDrop,
-                    pieceTheme: 'https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png'
+                    // FIX: Using high-quality SVG pieces from Lichess.org
+                    pieceTheme: 'https://lichess1.org/assets/piece/cburnett/{piece}.svg'
                 });
                 $(window).resize(board.resize);
             } else {
                 if (board.orientation() !== (playerColor === 'w' ? 'white' : 'black')) {
                     board.orientation(playerColor === 'w' ? 'white' : 'black');
                 }
-                board.position(game.fen());
             }
 
+            highlightLastMove();
             updatePlayerInfo(playerInfoEl, player, amIPlayer1 ? gameData.timers.p1 : gameData.timers.p2);
             updatePlayerInfo(opponentInfoEl, opponent, amIPlayer1 ? gameData.timers.p2 : gameData.timers.p1, true);
             updateStatus(gameData, playerColor);
@@ -690,14 +697,32 @@
 
         const playMoveSound = (pgn) => {
             if (!pgn) return;
+
+            let note, duration, synthOptions;
+
             if (pgn.includes('#')) {
-                sounds.gameEnd.triggerAttackRelease("C4", "0.5s");
+                note = "C4";
+                duration = "0.5s";
+                synthOptions = { oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.5, sustain: 0.2, release: 0.5 } };
             } else if (pgn.includes('+')) {
-                sounds.check.triggerAttackRelease("G#4", "0.3s");
+                note = "G#4";
+                duration = "0.3s";
+                synthOptions = { oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.3 } };
             } else if (pgn.includes('x')) {
-                sounds.capture.triggerAttackRelease("C3", "0.2s");
+                note = "C3";
+                duration = "0.2s";
+                synthOptions = { oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.0, release: 0.2 } };
             } else {
-                sounds.move.triggerAttackRelease("C4", "0.1s");
+                note = "C4";
+                duration = "0.1s";
+                synthOptions = { oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.0, release: 0.1 } };
+            }
+
+            try {
+                const synth = new Tone.Synth(synthOptions).toDestination();
+                synth.triggerAttackRelease(note, duration);
+            } catch (e) {
+                console.error("Could not play sound:", e);
             }
         };
 
